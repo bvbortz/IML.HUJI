@@ -51,8 +51,13 @@ class UnivariateGaussian:
         Sets `self.mu_`, `self.var_` attributes according to calculated estimation (where
         estimator is either biased or unbiased). Then sets `self.fitted_` attribute to `True`
         """
-        raise NotImplementedError()
-
+        m = X.size
+        self.mu_ = np.mean(X)
+        diff = (X - self.mu_) * (X - self.mu_)
+        if self.biased_:
+            self.var_ = np.sum(diff) / (m - 1)
+        else:
+            self.var_ = np.sum(diff) / m
         self.fitted_ = True
         return self
 
@@ -76,7 +81,10 @@ class UnivariateGaussian:
         """
         if not self.fitted_:
             raise ValueError("Estimator must first be fitted before calling `pdf` function")
-        raise NotImplementedError()
+        res = 1 / np.sqrt(2 * np.pi * self.var_) * \
+               np.exp(-(X - self.mu_)*(X - self.mu_) / (2 * self.var_))
+        return res
+
 
     @staticmethod
     def log_likelihood(mu: float, sigma: float, X: np.ndarray) -> float:
@@ -97,7 +105,10 @@ class UnivariateGaussian:
         log_likelihood: float
             log-likelihood calculated
         """
-        raise NotImplementedError()
+        m = X.size
+        ll = m / 2 * np.log(1.0 / (2.0 * np.pi * sigma ** 2)) \
+             - 1 / (2.0 * sigma ** 2) * np.sum((X - mu) * (X - mu))
+        return ll
 
 
 class MultivariateGaussian:
@@ -143,8 +154,13 @@ class MultivariateGaussian:
         Sets `self.mu_`, `self.cov_` attributes according to calculated estimation.
         Then sets `self.fitted_` attribute to `True`
         """
-        raise NotImplementedError()
+        def funcipunki(xi):
+            return np.outer(xi-self.mu_, xi-self.mu_)
 
+        m = X.shape[0]
+        self.mu_ = np.mean(X, axis=0)
+        self.cov_ = 1 / m * np.sum(np.apply_along_axis(funcipunki, 1, X),
+                                   axis=0)
         self.fitted_ = True
         return self
 
@@ -168,7 +184,11 @@ class MultivariateGaussian:
         """
         if not self.fitted_:
             raise ValueError("Estimator must first be fitted before calling `pdf` function")
-        raise NotImplementedError()
+        d = X.shape[0]
+        res = 1 / np.sqrt((2 * np.pi) ** d * det(self.cov_)) * \
+              np.exp(-1 / 2 * np.transpose(X - self.mu_) @ inv(self.cov_) @
+                     (X - self.mu_))
+        return res
 
     @staticmethod
     def log_likelihood(mu: np.ndarray, cov: np.ndarray, X: np.ndarray) -> float:
@@ -189,4 +209,13 @@ class MultivariateGaussian:
         log_likelihood: float
             log-likelihood calculated
         """
-        raise NotImplementedError()
+
+        def funcipunki(xi):
+            return np.transpose(xi - mu) @ inv(cov) @ (xi - mu)
+        m = X.shape[1]
+        d = cov.shape[0]
+        ll = m / 2 * np.log(1.0 / ((2.0 * np.pi) ** d * det(cov) ** 2)) \
+             - 1 / 2 * np.sum(np.apply_along_axis(funcipunki, 1, X))
+        return ll
+
+
