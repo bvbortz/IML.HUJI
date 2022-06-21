@@ -119,4 +119,34 @@ class GradientDescent:
                 Euclidean norm of w^(t)-w^(t-1)
 
         """
-        raise NotImplementedError()
+        best_weights = f.weights
+        avg_weights = f.weights
+        min_val = np.inf
+        cur_iter = 1
+        cur_jacobian = f.compute_jacobian(X=X, y=y)
+        cur_val = f.compute_output(X=X, y=y)
+        for i in range(self.max_iter_):
+
+            last_weights = f.weights
+            f.weights = last_weights - self.learning_rate_.lr_step(t=i+1) * cur_jacobian
+            cur_jacobian = f.compute_jacobian(X=X, y=y)
+            cur_val = f.compute_output(X=X, y=y)
+            if cur_val < min_val:
+                min_val = cur_val
+                best_weights = f.weights
+            avg_weights += f.weights
+            self.callback_(solver=self, weights=f.weights, val=cur_val,
+                           grad=cur_jacobian, t=i, eta=self.learning_rate_.lr_step(t=i + 1),
+                           delta=np.linalg.norm(f.weights - last_weights, ord=2))
+            cur_iter += 1
+            if np.linalg.norm(f.weights - last_weights, ord=2) < self.tol_:
+                break
+
+        last_weights = f.weights
+        if self.out_type_ == "last":
+            return last_weights
+        if self.out_type_ == "best":
+            return best_weights
+        if self.out_type_ == "average":
+            return avg_weights / cur_iter
+        return np.zeros(f.shape)

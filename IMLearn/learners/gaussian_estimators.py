@@ -54,7 +54,7 @@ class UnivariateGaussian:
         m = X.size
         self.mu_ = np.mean(X)
         diff = (X - self.mu_) * (X - self.mu_)
-        if self.biased_:
+        if not self.biased_:
             self.var_ = np.sum(diff) / (m - 1)
         else:
             self.var_ = np.sum(diff) / m
@@ -154,12 +154,12 @@ class MultivariateGaussian:
         Sets `self.mu_`, `self.cov_` attributes according to calculated estimation.
         Then sets `self.fitted_` attribute to `True`
         """
-        def funcipunki(xi):
+        def vec_func(xi):
             return np.outer(xi-self.mu_, xi-self.mu_)
 
         m = X.shape[0]
         self.mu_ = np.mean(X, axis=0)
-        self.cov_ = 1 / m * np.sum(np.apply_along_axis(funcipunki, 1, X),
+        self.cov_ = 1 / m * np.sum(np.apply_along_axis(vec_func, 1, X),
                                    axis=0)
         self.fitted_ = True
         return self
@@ -210,12 +210,23 @@ class MultivariateGaussian:
             log-likelihood calculated over all input data and under given parameters of Gaussian
         """
 
-        def funcipunki(xi):
-            return np.transpose(xi - mu) @ inv(cov) @ (xi - mu)
-        m = X.shape[1]
-        d = cov.shape[0]
-        ll = m / 2 * np.log(1.0 / ((2.0 * np.pi) ** d * det(cov) ** 2)) \
-             - 1 / 2 * np.sum(np.apply_along_axis(funcipunki, 1, X))
-        return ll
+        # def vec_func(xi):
+        #     return np.sum((cov @ (xi - mu)) * (xi - mu))
+        #     # return np.transpose(xi - mu) @ inv(cov) @ (xi - mu)
+        # m = X.shape[1]
+        # d = cov.shape[0]
+        # cov = inv(cov)
+        # ll = m / 2 * np.log(1.0 / ((2.0 * np.pi) ** d * det(cov) ** 2)) \
+        #      - 1 / 2 * np.sum(np.apply_along_axis(vec_func, 1, X))
+        # cov = inv(cov)
+        # return ll
+        d = X[:, np.newaxis, :] - mu
+        mahalanobis = np.sum(d.dot(inv(cov)) * d)
+
+        # Complete log likelihood value
+        return -(mahalanobis +
+                 len(X) * slogdet(cov)[1] +
+                 len(X) * X.shape[1] * np.log(2 * np.pi)) / 2
+
 
 

@@ -9,6 +9,7 @@ pio.templates.default = "simple_white"
 
 def test_univariate_gaussian():
     # Question 1 - Draw samples and print fitted model
+    np.random.seed(0)
     samples = np.random.normal(10, 1, 1000)
     ug = UnivariateGaussian()
 
@@ -43,6 +44,7 @@ def test_univariate_gaussian():
 
 def test_multivariate_gaussian():
     # Question 4 - Draw samples and print fitted model
+    np.random.seed(0)
     mean1 = np.array([0, 0, 4, 0])
     cov1 = np.array([[1, 0.2, 0, 0.5],
                      [0.2, 2, 0, 0],
